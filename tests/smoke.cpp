@@ -12,5 +12,9 @@ int main()
     kairo::simd::Add<float>(out, a, b);
     assert(out[0] == 5.0f && out[2] == 9.0f);
     assert(kairo::simd::Dot<float>(a, b) == 32.0f);
+    kairo::simd::Scale<float>(out, a, 2.0f);
+    assert(out[1] == 4.0f);
+    kairo::simd::Softmax<float>(out, a);
+    assert(out[0] < out[1] && out[1] < out[2]);
     return 0;
 }
