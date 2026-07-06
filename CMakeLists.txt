@@ -15,3 +15,6 @@ target_sources(KairoSIMD
 
 add_executable(KairoSIMDSmoke tests/smoke.cpp)
 target_link_libraries(KairoSIMDSmoke PRIVATE KairoSIMD)
+
+enable_testing()
+add_test(NAME KairoSIMDSmoke COMMAND KairoSIMDSmoke)
