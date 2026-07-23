@@ -5,6 +5,11 @@ module;
 #include <cstddef>
 #include <limits>
 #include <span>
+#include <stdexcept>
+
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#include <arm_neon.h>
+#endif
 
 export module Kairo.SIMD;
 
@@ -32,6 +37,14 @@ export namespace kairo::simd
 #endif
     }
 
+    inline void ValidateEqualSizes(std::size_t outputSize, std::size_t firstSize, std::size_t secondSize)
+    {
+        if (outputSize != firstSize || outputSize != secondSize)
+        {
+            throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
+        }
+    }
+
     template<typename T>
     void Fill(std::span<T> out, T value)
     {
@@ -53,6 +66,7 @@ export namespace kairo::simd
     template<typename T>
     void Add(std::span<T> out, std::span<const T> a, std::span<const T> b)
     {
+        ValidateEqualSizes(out.size(), a.size(), b.size());
         const std::size_t count = out.size();
         for (std::size_t i = 0; i < count; ++i)
         {
@@ -63,6 +77,7 @@ export namespace kairo::simd
     template<typename T>
     void Sub(std::span<T> out, std::span<const T> a, std::span<const T> b)
     {
+        ValidateEqualSizes(out.size(), a.size(), b.size());
         const std::size_t count = out.size();
         for (std::size_t i = 0; i < count; ++i)
         {
@@ -73,6 +88,7 @@ export namespace kairo::simd
     template<typename T>
     void Mul(std::span<T> out, std::span<const T> a, std::span<const T> b)
     {
+        ValidateEqualSizes(out.size(), a.size(), b.size());
         const std::size_t count = out.size();
         for (std::size_t i = 0; i < count; ++i)
         {
@@ -83,6 +99,7 @@ export namespace kairo::simd
     template<typename T>
     void Scale(std::span<T> out, std::span<const T> input, T scalar)
     {
+        if (out.size() != input.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
         for (std::size_t i = 0; i < out.size(); ++i)
         {
             out[i] = input[i] * scalar;
@@ -101,6 +118,7 @@ export namespace kairo::simd
     template<typename T>
     void Axpy(std::span<T> y, T alpha, std::span<const T> x)
     {
+        if (y.size() != x.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
         const std::size_t count = y.size();
         for (std::size_t i = 0; i < count; ++i)
         {
@@ -112,6 +130,7 @@ export namespace kairo::simd
     [[nodiscard]]
     T Dot(std::span<const T> a, std::span<const T> b)
     {
+        if (a.size() != b.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
         T sum = T(0);
         for (std::size_t i = 0; i < a.size(); ++i)
         {
@@ -142,6 +161,7 @@ export namespace kairo::simd
     template<typename T>
     void ReLU(std::span<T> out, std::span<const T> input)
     {
+        if (out.size() != input.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
         for (std::size_t i = 0; i < out.size(); ++i)
         {
             out[i] = std::max(T(0), input[i]);
@@ -160,6 +180,7 @@ export namespace kairo::simd
     template<typename T>
     void Softmax(std::span<T> out, std::span<const T> logits)
     {
+        if (out.size() != logits.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
         if (logits.empty())
         {
             return;
@@ -184,4 +205,72 @@ export namespace kairo::simd
             value *= invSum;
         }
     }
+
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+    /// Apple Silicon NEON specializations. They preserve the scalar API and
+    /// tail semantics, allowing callers to dispatch by type without platform
+    /// conditionals.
+    inline void Add(std::span<float> out, std::span<const float> a, std::span<const float> b)
+    {
+        ValidateEqualSizes(out.size(), a.size(), b.size());
+        std::size_t i = 0;
+        for (; i + 4 <= out.size(); i += 4)
+        {
+            vst1q_f32(out.data() + i, vaddq_f32(vld1q_f32(a.data() + i), vld1q_f32(b.data() + i)));
+        }
+        for (; i < out.size(); ++i) out[i] = a[i] + b[i];
+    }
+
+    inline void Scale(std::span<float> out, std::span<const float> input, float scalar)
+    {
+        if (out.size() != input.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
+        const float32x4_t scale = vdupq_n_f32(scalar);
+        std::size_t i = 0;
+        for (; i + 4 <= out.size(); i += 4)
+        {
+            vst1q_f32(out.data() + i, vmulq_f32(vld1q_f32(input.data() + i), scale));
+        }
+        for (; i < out.size(); ++i) out[i] = input[i] * scalar;
+    }
+
+    inline void Axpy(std::span<float> y, float alpha, std::span<const float> x)
+    {
+        if (y.size() != x.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
+        const float32x4_t scale = vdupq_n_f32(alpha);
+        std::size_t i = 0;
+        for (; i + 4 <= y.size(); i += 4)
+        {
+            const float32x4_t value = vfmaq_f32(vld1q_f32(y.data() + i), scale, vld1q_f32(x.data() + i));
+            vst1q_f32(y.data() + i, value);
+        }
+        for (; i < y.size(); ++i) y[i] += alpha * x[i];
+    }
+
+    [[nodiscard]]
+    inline float Dot(std::span<const float> a, std::span<const float> b)
+    {
+        if (a.size() != b.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
+        float32x4_t sum = vdupq_n_f32(0.0f);
+        std::size_t i = 0;
+        for (; i + 4 <= a.size(); i += 4)
+        {
+            sum = vfmaq_f32(sum, vld1q_f32(a.data() + i), vld1q_f32(b.data() + i));
+        }
+        float result = vaddvq_f32(sum);
+        for (; i < a.size(); ++i) result += a[i] * b[i];
+        return result;
+    }
+
+    inline void ReLU(std::span<float> out, std::span<const float> input)
+    {
+        if (out.size() != input.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
+        const float32x4_t zero = vdupq_n_f32(0.0f);
+        std::size_t i = 0;
+        for (; i + 4 <= out.size(); i += 4)
+        {
+            vst1q_f32(out.data() + i, vmaxq_f32(vld1q_f32(input.data() + i), zero));
+        }
+        for (; i < out.size(); ++i) out[i] = std::max(0.0f, input[i]);
+    }
+#endif
 }

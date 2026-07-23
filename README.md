@@ -1,8 +1,8 @@
 # KairoSIMD
 
 KairoSIMD is the CPU vector-kernel layer for Kairo ML. It defines the stable API
-that tensor kernels call for hot inner loops, starting with scalar reference
-implementations and leaving room for NEON, AVX2, and AVX-512 backends.
+that tensor kernels call for hot inner loops, with scalar reference
+implementations and Apple Silicon NEON fast paths for core float kernels.
 
 ## Problem
 
@@ -23,6 +23,7 @@ KairoSIMD provides:
 
 - CPU feature detection surface through `BaselineFeature()`.
 - Scalar fallback kernels for every exposed operation.
+- NEON float fast paths on ARM for `Add`, `Scale`, `AXPY`, `Dot`, and `ReLU`.
 - Span-based APIs that compose naturally with tensor views and scheduled ranges.
 - A future dispatch point for platform-specific implementation files.
 
@@ -52,7 +53,6 @@ ctest --test-dir build --output-on-failure
 
 ## Roadmap
 
-- NEON implementation for Apple Silicon and ARM.
 - AVX2/AVX-512 implementation for x86 servers.
 - Runtime dispatch tables.
 - Alignment-aware kernels.
