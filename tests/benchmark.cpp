@@ -7,6 +7,7 @@ import Kairo.SIMD;
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 int main(int argc, char** argv)
@@ -47,6 +48,11 @@ int main(int argc, char** argv)
     if (!std::isfinite(elementsPerSecond) || elementsPerSecond <= 0.0
         || maximumError != 0.0)
         return 1;
+    const double minimumThroughput =
+        argc > 2 ? std::stod(argv[2]) : 0.0;
+    if (minimumThroughput < 0.0
+        || (minimumThroughput > 0.0 && elementsPerSecond < minimumThroughput))
+        return 3;
 
     const std::string json =
         "{\n"
@@ -60,6 +66,8 @@ int main(int argc, char** argv)
         "  \"iterations\": " + std::to_string(iterations) + ",\n"
         "  \"median_ms\": " + std::to_string(medianMs) + ",\n"
         "  \"elements_per_second\": " + std::to_string(elementsPerSecond) + ",\n"
+        "  \"minimum_elements_per_second\": "
+            + std::to_string(minimumThroughput) + ",\n"
         "  \"maximum_absolute_error\": " + std::to_string(maximumError) + "\n"
         "}\n";
     if (argc > 1)

@@ -26,6 +26,8 @@ KairoSIMD provides:
 - Scalar fallback kernels for every exposed operation.
 - NEON float fast paths on ARM for `Add`, `Sub`, `Mul`, `Scale`, `AXPY`,
   `Dot`, `Sum`, and `ReLU`.
+- Runtime-dispatched AVX2 and AVX-512 Float32 add/dot kernels on x86, compiled
+  as targeted functions so the same binary retains scalar fallback.
 - Span-based APIs that compose naturally with tensor views and scheduled ranges.
 - A future dispatch point for platform-specific implementation files.
 
@@ -45,6 +47,9 @@ gate and a machine-readable input for hardware/compiler-specific histories.
 
 Separate ASan and TSan build configurations are available through
 `KAIRO_SIMD_ENABLE_ASAN` and `KAIRO_SIMD_ENABLE_TSAN`.
+`KAIRO_SIMD_MIN_ADD_ELEMENTS_PER_SECOND` sets a hardware-specific CTest
+throughput floor. CI must calibrate it per runner/compiler; leaving it at zero
+records evidence without making a non-portable speed claim.
 
 ## Where It Connects
 
@@ -65,8 +70,8 @@ ctest --test-dir build --output-on-failure
 
 ## Roadmap
 
-- AVX2/AVX-512 implementation for x86 servers.
-- Runtime dispatch tables.
+- Expand AVX2/AVX-512 coverage beyond add and dot.
+- General runtime dispatch tables.
 - Alignment-aware kernels.
 - Fused operations such as bias+activation and scale+add.
 - Microbenchmarks and regression thresholds.

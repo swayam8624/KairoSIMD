@@ -7,9 +7,13 @@ module;
 #include <span>
 #include <stdexcept>
 #include <string_view>
+#include <utility>
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #include <arm_neon.h>
+#endif
+#if defined(__x86_64__) || defined(_M_X64)
+#include <immintrin.h>
 #endif
 
 export module Kairo.SIMD;
@@ -278,6 +282,111 @@ export namespace kairo::simd
             value *= invSum;
         }
     }
+
+#if defined(__x86_64__) || defined(_M_X64)
+    namespace x86_detail
+    {
+        __attribute__((target("avx2")))
+        inline std::size_t AddAVX2(
+            float* out, const float* first, const float* second, std::size_t count)
+        {
+            std::size_t index = 0;
+            for (; index + 8 <= count; index += 8)
+                _mm256_storeu_ps(
+                    out + index,
+                    _mm256_add_ps(
+                        _mm256_loadu_ps(first + index),
+                        _mm256_loadu_ps(second + index)));
+            return index;
+        }
+
+        __attribute__((target("avx512f")))
+        inline std::size_t AddAVX512(
+            float* out, const float* first, const float* second, std::size_t count)
+        {
+            std::size_t index = 0;
+            for (; index + 16 <= count; index += 16)
+                _mm512_storeu_ps(
+                    out + index,
+                    _mm512_add_ps(
+                        _mm512_loadu_ps(first + index),
+                        _mm512_loadu_ps(second + index)));
+            return index;
+        }
+
+        __attribute__((target("avx2,fma")))
+        inline std::pair<float, std::size_t> DotAVX2(
+            const float* first, const float* second, std::size_t count)
+        {
+            __m256 sum = _mm256_setzero_ps();
+            std::size_t index = 0;
+            for (; index + 8 <= count; index += 8)
+                sum = _mm256_fmadd_ps(
+                    _mm256_loadu_ps(first + index),
+                    _mm256_loadu_ps(second + index), sum);
+            alignas(32) float lanes[8];
+            _mm256_store_ps(lanes, sum);
+            float reduced = 0.0f;
+            for (float lane : lanes) reduced += lane;
+            return { reduced, index };
+        }
+
+        __attribute__((target("avx512f,fma")))
+        inline std::pair<float, std::size_t> DotAVX512(
+            const float* first, const float* second, std::size_t count)
+        {
+            __m512 sum = _mm512_setzero_ps();
+            std::size_t index = 0;
+            for (; index + 16 <= count; index += 16)
+                sum = _mm512_fmadd_ps(
+                    _mm512_loadu_ps(first + index),
+                    _mm512_loadu_ps(second + index), sum);
+            alignas(64) float lanes[16];
+            _mm512_store_ps(lanes, sum);
+            float reduced = 0.0f;
+            for (float lane : lanes) reduced += lane;
+            return { reduced, index };
+        }
+    }
+
+    /// Runtime-dispatched x86 Float32 addition with scalar tail handling.
+    inline void Add(
+        std::span<float> out,
+        std::span<const float> first,
+        std::span<const float> second)
+    {
+        ValidateEqualSizes(out.size(), first.size(), second.size());
+        std::size_t index = 0;
+        const CpuFeature feature = DetectedFeature();
+        if (feature == CpuFeature::AVX512)
+            index = x86_detail::AddAVX512(
+                out.data(), first.data(), second.data(), out.size());
+        else if (feature == CpuFeature::AVX2)
+            index = x86_detail::AddAVX2(
+                out.data(), first.data(), second.data(), out.size());
+        for (; index < out.size(); ++index)
+            out[index] = first[index] + second[index];
+    }
+
+    /// Runtime-dispatched x86 Float32 dot product with Float32 accumulation.
+    [[nodiscard]] inline float Dot(
+        std::span<const float> first, std::span<const float> second)
+    {
+        if (first.size() != second.size())
+            throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
+        std::pair<float, std::size_t> partial{ 0.0f, 0 };
+        const CpuFeature feature = DetectedFeature();
+        if (feature == CpuFeature::AVX512)
+            partial = x86_detail::DotAVX512(
+                first.data(), second.data(), first.size());
+        else if (feature == CpuFeature::AVX2)
+            partial = x86_detail::DotAVX2(
+                first.data(), second.data(), first.size());
+        for (std::size_t index = partial.second; index < first.size(); ++index)
+            partial.first += first[index] * second[index];
+        return partial.first;
+    }
+#endif
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
     /// Apple Silicon NEON specializations. They preserve the scalar API and

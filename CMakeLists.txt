@@ -7,6 +7,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(KAIRO_SIMD_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(KAIRO_SIMD_ENABLE_TSAN "Enable ThreadSanitizer" OFF)
+set(
+    KAIRO_SIMD_MIN_ADD_ELEMENTS_PER_SECOND "0"
+    CACHE STRING "Fail the SIMD benchmark below this hardware-specific throughput"
+)
 if(KAIRO_SIMD_ENABLE_ASAN AND KAIRO_SIMD_ENABLE_TSAN)
     message(FATAL_ERROR "ASan and TSan must use separate build directories")
 endif()
@@ -36,5 +40,7 @@ enable_testing()
 add_test(NAME KairoSIMDSmoke COMMAND KairoSIMDSmoke)
 add_test(
     NAME KairoSIMDBenchmark
-    COMMAND KairoSIMDBenchmark ${CMAKE_CURRENT_BINARY_DIR}/kairo-simd-benchmark.json
+    COMMAND KairoSIMDBenchmark
+        ${CMAKE_CURRENT_BINARY_DIR}/kairo-simd-benchmark.json
+        ${KAIRO_SIMD_MIN_ADD_ELEMENTS_PER_SECOND}
 )

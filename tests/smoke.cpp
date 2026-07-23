@@ -23,9 +23,9 @@ int main()
     std::array<float, 9> vectorOut{};
     kairo::simd::Add(vectorOut, vectorA, vectorB);
     assert(vectorOut[0] == -3.0f && vectorOut[8] == 13.0f);
-    kairo::simd::Scale(vectorOut, vectorB, 0.5f);
+    kairo::simd::Scale<float>(vectorOut, vectorB, 0.5f);
     assert(vectorOut[0] == 0.5f && vectorOut[8] == 4.5f);
-    kairo::simd::ReLU(vectorOut, vectorA);
+    kairo::simd::ReLU<float>(vectorOut, vectorA);
     assert(vectorOut[0] == 0.0f && vectorOut[8] == 4.0f);
     assert(kairo::simd::Dot(vectorA, vectorB) == 60.0f);
     assert(kairo::simd::Sum(std::span<const float>(vectorB)) == 45.0f);
