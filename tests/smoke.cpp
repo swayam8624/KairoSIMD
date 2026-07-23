@@ -2,6 +2,7 @@ import Kairo.SIMD;
 
 #include <array>
 #include <cassert>
+#include <cmath>
 #include <span>
 #include <string_view>
 
@@ -33,6 +34,19 @@ int main()
     std::array<float, 3> bias{ 1.0f, -1.0f, 0.5f };
     kairo::simd::BiasReLU<float>(vectorOut, vectorA, bias);
     assert(vectorOut[0] == 0.0f && vectorOut[5] == 1.5f && vectorOut[8] == 4.5f);
+    std::array<float, 6> normInput{ 1, 2, 3, 2, 4, 6 };
+    std::array<float, 6> normOutput{};
+    std::array<float, 3> normScale{ 1, 1, 1 };
+    std::array<float, 3> normBias{};
+    kairo::simd::LayerNormRows<float>(
+        normOutput, normInput, normScale, normBias, 2, 3, 1e-5f);
+    for (std::size_t row = 0; row < 2; ++row)
+    {
+        const float mean = (
+            normOutput[row * 3] + normOutput[row * 3 + 1]
+            + normOutput[row * 3 + 2]) / 3.0f;
+        assert(std::abs(mean) < 1e-6f);
+    }
 
     std::array<float, 3> parameters{ 1.0f, 2.0f, 3.0f };
     std::array<float, 3> first{};

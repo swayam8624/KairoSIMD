@@ -38,7 +38,8 @@ Current kernels:
 - `Scale`, `Clamp`, `Axpy`
 - `Dot`, `Sum`, `L2Norm`
 - `ReLU`, `Sigmoid`, `Softmax`
-- fused `BiasReLU` and stateful `AdamW` update
+- fused `BiasReLU`, affine row-wise `LayerNormRows`, and stateful `AdamW`
+  update
 
 `KairoSIMDBenchmark` writes `kairo.simd.benchmark.v1` JSON containing the
 detected backend, fixed problem size, warmups, measured iterations, median

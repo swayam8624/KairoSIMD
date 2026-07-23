@@ -214,6 +214,44 @@ export namespace kairo::simd
             out[index] = std::max(T(0), input[index] + bias[index % bias.size()]);
     }
 
+    /// Fused row-wise affine LayerNorm over contiguous [rows,width] storage.
+    template<typename T>
+    void LayerNormRows(
+        std::span<T> out,
+        std::span<const T> input,
+        std::span<const T> scale,
+        std::span<const T> bias,
+        std::size_t rows,
+        std::size_t width,
+        T epsilon)
+    {
+        if (rows == 0 || width == 0 || out.size() != rows * width
+            || input.size() != out.size() || scale.size() != width
+            || bias.size() != width || !(epsilon > T(0)))
+            throw std::invalid_argument(
+                "LayerNormRows requires contiguous [rows,width] and affine vectors.");
+        const T inverseWidth = T(1) / static_cast<T>(width);
+        for (std::size_t row = 0; row < rows; ++row)
+        {
+            T mean = T(0);
+            for (std::size_t column = 0; column < width; ++column)
+                mean += input[row * width + column];
+            mean *= inverseWidth;
+            T variance = T(0);
+            for (std::size_t column = 0; column < width; ++column)
+            {
+                const T delta = input[row * width + column] - mean;
+                variance += delta * delta;
+            }
+            const T inverseStandardDeviation =
+                T(1) / std::sqrt(variance * inverseWidth + epsilon);
+            for (std::size_t column = 0; column < width; ++column)
+                out[row * width + column] =
+                    (input[row * width + column] - mean)
+                    * inverseStandardDeviation * scale[column] + bias[column];
+        }
+    }
+
     template<typename T>
     void AdamW(
         std::span<T> parameters,
