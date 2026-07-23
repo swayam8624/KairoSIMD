@@ -21,9 +21,11 @@ not change when optimized CPU implementations arrive.
 
 KairoSIMD provides:
 
-- CPU feature detection surface through `BaselineFeature()`.
+- Compile-time and runtime CPU feature reporting through `BaselineFeature()`
+  and `DetectedFeature()`.
 - Scalar fallback kernels for every exposed operation.
-- NEON float fast paths on ARM for `Add`, `Scale`, `AXPY`, `Dot`, and `ReLU`.
+- NEON float fast paths on ARM for `Add`, `Sub`, `Mul`, `Scale`, `AXPY`,
+  `Dot`, `Sum`, and `ReLU`.
 - Span-based APIs that compose naturally with tensor views and scheduled ranges.
 - A future dispatch point for platform-specific implementation files.
 
@@ -34,6 +36,7 @@ Current kernels:
 - `Scale`, `Clamp`, `Axpy`
 - `Dot`, `Sum`, `L2Norm`
 - `ReLU`, `Sigmoid`, `Softmax`
+- fused `BiasReLU` and stateful `AdamW` update
 
 ## Where It Connects
 
