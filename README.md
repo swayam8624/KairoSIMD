@@ -38,6 +38,14 @@ Current kernels:
 - `ReLU`, `Sigmoid`, `Softmax`
 - fused `BiasReLU` and stateful `AdamW` update
 
+`KairoSIMDBenchmark` writes `kairo.simd.benchmark.v1` JSON containing the
+detected backend, fixed problem size, warmups, measured iterations, median
+latency, element throughput, and scalar numerical error. It is a bounded CTest
+gate and a machine-readable input for hardware/compiler-specific histories.
+
+Separate ASan and TSan build configurations are available through
+`KAIRO_SIMD_ENABLE_ASAN` and `KAIRO_SIMD_ENABLE_TSAN`.
+
 ## Where It Connects
 
 - `KairoMath::Tensor`: delegates contiguous/ranged math to KairoSIMD.
@@ -52,6 +60,7 @@ cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/cla
 cmake --build build
 ctest --test-dir build --output-on-failure
 ./build/KairoSIMDSmoke
+./build/KairoSIMDBenchmark build/kairo-simd-benchmark.json
 ```
 
 ## Roadmap
