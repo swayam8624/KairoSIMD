@@ -1,0 +1,13 @@
+schema: kairo.research-track.v1
+track: R7
+title: Frame-budget-aware heterogeneous inference
+state: hypothesis
+role: cpu_vector_baseline_and_small_workload_path
+problem: Small inference kernels may be faster on CPU SIMD once GPU dispatch and transfer overhead are included.
+hypothesis: Measured SIMD cost can provide a strong CPU path for an online scheduler that reduces interactive deadline misses versus fixed device routing.
+baselines: [scalar_cpu, simd_cpu, gpu_only, static_threshold]
+workloads: [vector_kernels, tiny_mlp, normalization, attention_primitives]
+metrics: [latency_us_p50, latency_us_p95, throughput, maximum_absolute_error, scheduler_crossover_size]
+ablations: [no_simd, fixed_threshold]
+failure_cases: [tiny_inputs, thermal_contention, irregular_tail_sizes]
+falsification: Reject if SIMD does not provide a stable low-overhead region useful to a scheduler after correctness and dispatch overhead are included.
