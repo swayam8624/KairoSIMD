@@ -29,6 +29,8 @@ target_sources(KairoSIMD
         FILE_SET CXX_MODULES
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src
         FILES src/KairoSIMD.cppm
+    PRIVATE
+        src/KairoSIMDPlatform.cpp
 )
 
 add_executable(KairoSIMDSmoke tests/smoke.cpp)
