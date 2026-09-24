@@ -17,7 +17,7 @@ module Kairo.SIMD;
 
 namespace kairo::simd
 {
-#if defined(__x86_64__) || defined(_M_X64)
+#if (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(_M_X64))
     namespace x86_detail
     {
         __attribute__((target("avx2")))
@@ -92,7 +92,7 @@ namespace kairo::simd
         for (; i + 4 <= out.size(); i += 4)
             vst1q_f32(out.data() + i,
                 vaddq_f32(vld1q_f32(a.data() + i), vld1q_f32(b.data() + i)));
-#elif defined(__x86_64__) || defined(_M_X64)
+#elif (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(_M_X64))
         const CpuFeature feature = DetectedFeature();
         if (feature == CpuFeature::AVX512)
             i = x86_detail::AddAVX512(out.data(), a.data(), b.data(), out.size());
@@ -168,7 +168,7 @@ namespace kairo::simd
         for (; i + 4 <= a.size(); i += 4)
             sum = vfmaq_f32(sum, vld1q_f32(a.data() + i), vld1q_f32(b.data() + i));
         result = vaddvq_f32(sum);
-#elif defined(__x86_64__) || defined(_M_X64)
+#elif (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(_M_X64))
         std::pair<float, std::size_t> partial{ 0.0f, 0u };
         const CpuFeature feature = DetectedFeature();
         if (feature == CpuFeature::AVX512)
