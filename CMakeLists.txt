@@ -66,9 +66,9 @@ endif()
 # Current Linux Clang + libstdc++ 14 emits a deprecation from the standard
 # library iterator implementation while compiling the smoke consumer. Keep the
 # exception on the test consumer; KairoSIMD production sources remain -Werror.
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
-   CMAKE_CXX_STANDARD_LIBRARY STREQUAL "")
-    # CMake does not expose the selected standard library portably. This flag is
-    # harmless with libc++ and bounded to the smoke executable.
-    target_compile_options(KairoSIMDSmoke PRIVATE -Wno-deprecated-declarations)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND UNIX AND NOT APPLE)
+    foreach(_kairo_consumer IN ITEMS KairoSIMDSmoke KairoSIMDBenchmark)
+        target_compile_options(${_kairo_consumer} PRIVATE
+            -Wno-deprecated-declarations)
+    endforeach()
 endif()
