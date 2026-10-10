@@ -218,7 +218,12 @@ export namespace kairo::simd
         std::size_t width,
         T epsilon)
     {
-        if (rows == 0 || width == 0 || out.size() != rows * width
+        // Multiplying an untrusted tensor shape may wrap size_t before the
+        // span-length check; e.g. rows=(SIZE_MAX/2)+1, width=2 looks like an
+        // empty tensor and then iterates out of bounds. Validate first.
+        if (rows == 0 || width == 0 ||
+            rows > std::numeric_limits<std::size_t>::max() / width ||
+            out.size() != rows * width
             || input.size() != out.size() || scale.size() != width
             || bias.size() != width || !(epsilon > T(0)))
             throw std::invalid_argument(
@@ -279,6 +284,8 @@ export namespace kairo::simd
     template<typename T>
     void Sigmoid(std::span<T> out, std::span<const T> input)
     {
+        if (out.size() != input.size())
+            throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
         for (std::size_t i = 0; i < out.size(); ++i)
         {
             out[i] = T(1) / (T(1) + std::exp(-input[i]));

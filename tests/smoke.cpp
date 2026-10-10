@@ -3,6 +3,8 @@ import Kairo.SIMD;
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <limits>
+#include <stdexcept>
 #include <span>
 #include <string_view>
 
@@ -47,6 +49,44 @@ int main()
             + normOutput[row * 3 + 2]) / 3.0f;
         assert(std::abs(mean) < 1e-6f);
     }
+
+    // A wrapped (rows * width) must not make an enormous tensor look like a
+    // zero-length span and subsequently enter a massive out-of-bounds loop.
+    std::array<float, 0> noData{};
+    std::array<float, 2> affine{ 1.0f, 1.0f };
+    const std::size_t overflowingRows =
+        std::numeric_limits<std::size_t>::max() / 2u + 1u;
+    bool wrappedShapeRejected = false;
+    try
+    {
+        kairo::simd::LayerNormRows<float>(
+            noData, noData, affine, affine, overflowingRows, 2u, 1e-5f);
+    }
+    catch (const std::invalid_argument&)
+    {
+        wrappedShapeRejected = true;
+    }
+    if (!wrappedShapeRejected)
+        throw std::runtime_error("LayerNormRows accepted overflowing shape dimensions.");
+
+    std::array<float, 1> shortInput{ 0.0f };
+    std::array<float, 2> sigmoidOutput{};
+    bool sigmoidMismatchRejected = false;
+    try
+    {
+        kairo::simd::Sigmoid<float>(sigmoidOutput, shortInput);
+    }
+    catch (const std::invalid_argument&)
+    {
+        sigmoidMismatchRejected = true;
+    }
+    if (!sigmoidMismatchRejected)
+        throw std::runtime_error("Sigmoid read beyond a mismatched input span.");
+    std::array<float, 2> sigmoidInput{ 0.0f, std::log(3.0f) };
+    kairo::simd::Sigmoid<float>(sigmoidOutput, sigmoidInput);
+    if (std::abs(sigmoidOutput[0] - 0.5f) > 1e-6f ||
+        std::abs(sigmoidOutput[1] - 0.75f) > 1e-6f)
+        throw std::runtime_error("Sigmoid computed incorrect in-range values.");
 
     std::array<float, 3> parameters{ 1.0f, 2.0f, 3.0f };
     std::array<float, 3> first{};
