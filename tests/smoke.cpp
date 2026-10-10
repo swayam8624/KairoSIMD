@@ -1,6 +1,11 @@
 import Kairo.SIMD;
 
 #include <array>
+// Release CI defines NDEBUG; this executable is a regression test and must
+// evaluate every assertion on optimized SIMD kernels.
+#if defined(NDEBUG)
+#undef NDEBUG
+#endif
 #include <cassert>
 #include <cmath>
 #include <span>
