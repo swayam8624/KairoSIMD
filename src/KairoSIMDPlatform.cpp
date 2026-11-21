@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Platform CPU feature and optimized instruction implementation connected to KairoSIMD.cppm; runtime
+// dispatch must match compiled targets and scalar fallback behavior.
+// See docs/SOURCE_READING_ORDER.md for tests and consumers.
+
 module;
 
 #include <algorithm>
