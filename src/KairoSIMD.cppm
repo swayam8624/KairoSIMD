@@ -1,3 +1,4 @@
+// TEACHING MAP: SIMD public kernel surface dispatches scalar or supported native vector paths. Callers in numerical/ML code rely on equivalent results and explicit CPU capability constraints.
 module;
 
 #include <algorithm>
