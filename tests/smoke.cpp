@@ -1,3 +1,9 @@
+// TEACHING MAP — tests/smoke.cpp
+// Exercises public KairoSIMD operations and scalar fallbacks against reference
+// calculations. Tests require execution on the appropriate CPU to verify
+// feature dispatch, tail lengths, alignment and numerical tolerances.
+// See READING_ORDER.md for API and platform relationships.
+
 import Kairo.SIMD;
 
 #include <array>
