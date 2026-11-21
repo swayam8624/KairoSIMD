@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Span-based vector math kernel surface dispatching scalar, NEON or AVX paths. Tensor callers should
+// use the API, not hardwire machine intrinsics; check numerical tolerances against scalar reference.
+// See docs/SOURCE_READING_ORDER.md for tests and consumers.
+
 module;
 
 #include <algorithm>
