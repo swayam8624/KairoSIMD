@@ -1,3 +1,9 @@
+// TEACHING MAP — src/KairoSIMD.cppm
+// Exports numerically defined vector, activation, dot and AXPY operations with scalar
+// fallback. CPU feature selection is hidden in KairoSIMDPlatform.cpp; consumers should not
+// assume SIMD is always faster.
+// Read READING_ORDER.md for public APIs, call paths, preconditions and tests.
+
 module;
 
 #include <algorithm>
