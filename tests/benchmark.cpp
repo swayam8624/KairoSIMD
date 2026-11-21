@@ -1,3 +1,8 @@
+// TEACHING MAP — tests/benchmark.cpp
+// Measures SIMD kernels against comparable scalar operations; account for setup, cache
+// effects and vector-size thresholds before reporting acceleration.
+// Read READING_ORDER.md for public APIs, call paths, preconditions and tests.
+
 import Kairo.SIMD;
 
 #include <algorithm>
