@@ -27,6 +27,8 @@ export namespace kairo::simd
     };
 
     [[nodiscard]]
+    // Teaching: reports what the current compilation target guarantees,
+    // not necessarily every instruction supported by the running CPU.
     constexpr CpuFeature BaselineFeature() noexcept
     {
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
@@ -44,6 +46,8 @@ export namespace kairo::simd
     /// mandatory architectural baseline. x86 builds use compiler runtime CPU
     /// queries and retain scalar fallback when optimized objects are absent.
     [[nodiscard]]
+    // Teaching: runtime capability query for optimized dispatch; keep a
+    // scalar implementation when CPU features or optimized objects are absent.
     inline CpuFeature DetectedFeature() noexcept
     {
 #if defined(__aarch64__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
@@ -72,6 +76,8 @@ export namespace kairo::simd
         return "unknown";
     }
 
+    // Teaching: a span carries pointer + element count but does not prove
+    // compatible tensor shapes. Validate lengths before elementwise kernels.
     inline void ValidateEqualSizes(std::size_t outputSize, std::size_t firstSize, std::size_t secondSize)
     {
         if (outputSize != firstSize || outputSize != secondSize)
@@ -99,6 +105,8 @@ export namespace kairo::simd
     }
 
     template<typename T>
+    // Teaching: scalar generic add is the reference semantics against which
+    // Float32 NEON/AVX dispatch results should be checked. Caller owns spans.
     void Add(std::span<T> out, std::span<const T> a, std::span<const T> b)
     {
         ValidateEqualSizes(out.size(), a.size(), b.size());
@@ -298,6 +306,8 @@ export namespace kairo::simd
     }
 
     template<typename T>
+    // Teaching: softmax operates on the supplied span as one distribution;
+    // a tensor caller must explicitly split rows/batches to avoid mixing samples.
     void Softmax(std::span<T> out, std::span<const T> logits)
     {
         if (out.size() != logits.size()) throw std::invalid_argument("SIMD kernel spans must have equal sizes.");
