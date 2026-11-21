@@ -1,3 +1,9 @@
+// TEACHING MAP — src/KairoSIMDPlatform.cpp
+// Implements platform-specific SIMD paths and capability detection, including Apple
+// Silicon NEON where available. The public module must preserve scalar semantics for
+// alignment, aliasing and tail lengths.
+// Read READING_ORDER.md for public APIs, call paths, preconditions and tests.
+
 module;
 
 #include <algorithm>
