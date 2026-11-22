@@ -1,3 +1,14 @@
+// TEACHING IMPLEMENTATION: This C++23 module implementation unit
+// specializes Float32 SIMD operations from Kairo.SIMD and dispatches
+// to selected NEON/AVX2/AVX512 intrinsics only on supported hosts.
+// Vector-width loops use unaligned loads/stores where appropriate
+// and scalar tails handle remaining elements.
+//
+// Runtime feature probing and OS register support matter: unsupported
+// machine instructions crash rather than harmlessly fall back.
+// Numerical parity (especially reductions) must be tested against
+// scalar paths within tolerance. This operates on the calling CPU
+// thread; KairoScheduler parallelization and KairoGPU are separate.
 module;
 
 #include <algorithm>
@@ -84,6 +95,9 @@ namespace kairo::simd
     }
 #endif
 
+    // Validate three spans, select a safe SIMD feature and compute
+    // vector-width blocks with scalar tail for leftover elements.
+    // Review overlap/alias assumptions before permitting in-place use.
     void Add(std::span<float> out, std::span<const float> a, std::span<const float> b)
     {
         ValidateEqualSizes(out.size(), a.size(), b.size());
