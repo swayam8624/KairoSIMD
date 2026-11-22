@@ -1,4 +1,17 @@
-// TEACHING MAP: SIMD public kernel surface dispatches scalar or supported native vector paths. Callers in numerical/ML code rely on equivalent results and explicit CPU capability constraints.
+// TEACHING MAP: Public C++23 SIMD helpers operate over std::span.
+// Generic template routines give scalar reference implementations;
+// Float32 specialized functions live in KairoSIMDPlatform.cpp and
+// select supported ARM NEON/x86 AVX2/AVX512 paths where available.
+//
+// BaselineFeature describes the compiled CPU target while DetectedFeature
+// must honor runtime CPU/OS capability; vector instructions are not
+// guaranteed merely because a compiler supports their intrinsics.
+// Correctness depends on finite/NaN policy, contiguous spans, rounding,
+// reduction order and declared in/out alias constraints. Compare with
+// scalar equivalents under a numeric tolerance before timing throughput.
+//
+// TensorExecution callers must materialize noncontiguous Tensor views
+// before using raw spans. SIMD works on CPU threads, not GPU queues.
 module;
 
 #include <algorithm>
@@ -40,6 +53,8 @@ export namespace kairo::simd
     /// mandatory architectural baseline. x86 builds use compiler runtime CPU
     /// queries and retain scalar fallback when optimized objects are absent.
     [[nodiscard]]
+    // Runtime ISA selection must be compatible with host CPU/OS feature
+    // state; consult platform probe before adding AVX/NEON paths.
     inline CpuFeature DetectedFeature() noexcept
     {
 #if defined(__aarch64__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
@@ -210,6 +225,8 @@ export namespace kairo::simd
 
     /// Fused row-wise affine LayerNorm over contiguous [rows,width] storage.
     template<typename T>
+    // Normalize rows with finite epsilon and stable reductions; test
+    // constant/large-magnitude rows against scalar Tensor reference.
     void LayerNormRows(
         std::span<T> out,
         std::span<const T> input,
@@ -252,6 +269,8 @@ export namespace kairo::simd
     }
 
     template<typename T>
+    // Optimizer vector update semantics include moment estimates and
+    // decoupled decay; compare a whole step, not just one multiply.
     void AdamW(
         std::span<T> parameters,
         std::span<T> firstMoment,
