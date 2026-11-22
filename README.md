@@ -1,5 +1,5 @@
 # KairoSIMD
-**Deep source walkthrough:** [CPU SIMD dispatch and numerical parity](docs/SIMD_SCALAR_PARITY_GUIDE.md).
+**Deep source walkthrough:** [CPU SIMD dispatch and numerical parity](docs/SIMD_SCALAR_PARITY_GUIDE.md). Continue with [the advanced module, dispatch and numerical-contract lab](docs/ADVANCED_SIMD_API_AND_DISPATCH_LAB.md).
 
 KairoSIMD is the CPU vector-kernel layer for Kairo ML. It defines the stable API
 that tensor kernels call for hot inner loops, with scalar reference
