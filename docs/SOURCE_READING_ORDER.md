@@ -1,4 +1,5 @@
 # Teaching source map — KairoSIMD
+**Deep source walkthrough:** [CPU SIMD dispatch and numerical parity](SIMD_SCALAR_PARITY_GUIDE.md).
 
 Portable SIMD math kernels with scalar fallbacks.
 
